@@ -1,6 +1,6 @@
 import re
 import numpy as np
-numregex = '-?(?:\d*\.?\d+|\d+\.)'
+numregex = '-?(?:\d*\.?\d+|\d+\.|nan|inf)' #does not handle complex numbers yet, but tolerates float('nan') and np.inf
 
 split_brackets = lambda string_: re.split('[\[\]\)\(]+,?',string_)
 
