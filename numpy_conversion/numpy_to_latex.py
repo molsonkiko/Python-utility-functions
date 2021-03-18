@@ -3,10 +3,10 @@ import re
 from numpy_array_from_string import is_not_stub_row, not_whitespace_rows
 
 mymat = [
-['''q" 'fubar''',"bju'fu, \"boy\" ]say", '"hey^{34} _{b}ab"','','1.23'],
-[     '', '1&3', '2' ,'7','-9']]
+['''q" 'fubar''',"bju'fu, \"boy\" ]say", '"hey^{34} _{b}ab"','','$1.23'],
+[     '', '1&3', '2' ,'7','-$9']]
 # strupid_df = pd.DataFrame(mymat,index=['''djl' fjr"ew''',"jdfer's un"],
-#                                          columns = ['a','b','c','d','e'])
+#                                           columns = ['a','b','c','d','e'])
 
 #this is the most pathological dataframe I could think of. If someone else can think of
 #something more horrible (from the perspective of pandas_to_latex), please try it
@@ -51,7 +51,7 @@ bracket_type: controls the type of bracket used to enclose the matrix.
     
     strmat = re.sub(':',r'\!:\!',strmat) #reduce space before and after colons
     strmat = re.sub('inf',r'\\infty',strmat)
-    strmat = re.sub("(&|{|}|_)","\\\\\g<1>",strmat) #escape '&','{', '_', '}' b/c special chars
+    strmat = re.sub("(&|{|}|_|\$)","\\\\\g<1>",strmat) #escape '&','{', '_', '}' b/c special chars
     strmat = re.sub('(\D)(\.\d+)','\g<1>0\g<2>',strmat) #add 0 before numbers <1 w/o leading 0
     strmat = re.sub(r"\\'","'",strmat) #remove unneeded escapes (cause errors in LaTeX)
     begin = r"$\begin{"+bracket_type+"matrix}"+'\n'
