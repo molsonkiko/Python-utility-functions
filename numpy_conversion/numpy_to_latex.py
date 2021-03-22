@@ -16,13 +16,21 @@ listitem_regex = '''[\[ ][\\'"](.*?)[\\'"][\],]'''
 #and followed by a quotation mark and then a comma or "]"
 
 def numpy_to_latex(mat,bracket_type='b'):
-    strmat = re.sub('inf',r'\\infty',str(mat))
-    strmat = re.sub('(\D)(\.\d+)','\g<1>0\g<2>',strmat)
-    begin = r"$\begin{"+bracket_type+"matrix}"+'\n'
+    strmat = re.sub('(\D)(\.\d+)','\g<1>0\g<2>',str(mat))
+    begin_ = r"$\begin{"+bracket_type+"matrix}"+'\n'
     end_ = "\n"+r"\end{"+bracket_type + "matrix}$"
-    out_rows = not_whitespace_rows(strmat)
-    out_rows = [' & '.join(re.split(',?\s+',row)) for row in out_rows]
-    return begin + ' \\\\ \n'.join(out_rows) + end_
+    is_complex = any(x[1]!='' for x in re.findall(complex_regex,strmat))
+    unparsed_rows = not_whitespace_rows(strmat)
+    out_rows = []
+    for row in unparsed_rows:
+        if is_complex:
+            complex_list_row = re.findall(complex_regex,row)
+            parsed_row = [''.join(x)+'*i' for x in complex_list_row]
+        else:
+            parsed_row = re.findall(numregex,row)
+        string_row = re.sub('inf',r'\\infty',' & '.join(parsed_row))
+        out_rows.append(string_row)
+    return begin_ + ' \\\\ \n'.join(out_rows) + end_
     
 def pandas_to_latex(dataframe,bracket_type = ''):
     '''Converts a pandas DataFrame into a LaTeX matrix.
