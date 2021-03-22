@@ -1,27 +1,47 @@
 import re
 import numpy as np
-numregex = '-?(?:\d*\.?\d+|\d+\.|nan|inf)' #does not handle complex numbers yet, but tolerates float('nan') and np.inf
+from numpy import nan,inf
+numregex = "([+\-]?(?:\d+\.?\d*|nan|inf)(?:e[-+]\d+)?)"
+
+complex_regex = ("([+\-]?(?:\d+\.?\d*|nan|inf)(?:e[-+]\d+)?)" #real part
+			"(?:\s*([+\-](?:\d+\.\d*(?:e[+-]\d+)?|nan|inf))j)?") #imaginary part
+#a rather apt name for this regex, unfortunately.
+#It matches string representations of Python complex numbers.
 
 split_brackets = lambda string_: re.split('[\[\]\)\(]+,?',string_)
+
+to_complex = lambda tup: complex(float(tup[0]),float(tup[1]))
 
 is_not_stub_row = lambda string_: (re.fullmatch('^\s*$',string_) is None)
 
 not_whitespace_rows = lambda string_: list(filter(is_not_stub_row,split_brackets(string_)))
 
-remake_array = lambda string_list: [list(map(float,re.findall(numregex,x)))
+remake_array = lambda string_list,type_ = str: [list(map(type_,re.findall(numregex,x)))
 							 for x in string_list]
 
-def numpy_array_from_string(array_string):
+def numpy_array_from_string(array_string,type_ = float):
 	brack_split = not_whitespace_rows(array_string)
-	new_arr = remake_array(brack_split)
+	if type_ == complex:
+		new_arr = []
+		for row in brack_split:
+			new_arr.append(list(map(to_complex, re.findall(complex_regex,row))))
+	else:
+		new_arr = remake_array(brack_split,type_)
 	return np.array(new_arr)
 
-myarr_string = '''[[1 2
-3 4][2 3
-45 -3] [4.3234 -5.6
-0. 7.]]'''
+complex_arr = np.array([
+	[complex(inf,-inf),nan,complex(.1,-1.2)],
+    [complex(-10010,15_000),0,complex(1e9,-2e-14)],
+	[-.000000002,complex(-3,-2.0333),inf],
+    [complex(0,-15),complex(nan,nan),complex(0,0.0000000000005107)]])
 
-myarr = np.array([[1,2,3,4],[2,3,45,-3],[4.3234,-5.6,0,7]])
+complex_str = str(complex_arr)
+
+myarr = np.array([[1,2,3,-np.inf],
+				  [2,float('nan'),45,-3],
+				  [4.3234,-5.6,0,.7]])
+
+myarr_string = str(myarr)
         
 #below is the canonical string representation of np.eye(25)
 eye25_string = '''([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
