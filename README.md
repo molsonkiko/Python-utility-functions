@@ -3,7 +3,8 @@ This is a grab-bag of stuff I created "just because".
 
 <b style = 'font-size:115%'>In chronological order (periodically reordered according to my perception of the function's importance or actual utility):</b>
 <li>
-  <b>1.</b> grep: Not just for searching for text in files! Can also:<ul>
+  <b>1.</b> grep (requires gsfd, encodings_text_files): Not just for searching for text in files! Can also:<ul>
+    <b>-</b> be called from the command line<br>
     <b>-</b> search for filenames (which can include non-text files) and directory names matching regexes<br>
     <b>-</b> use pipes to successively refine file searches<br>
     <b>-</b> Write results to JSON files<br>
