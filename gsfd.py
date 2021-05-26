@@ -3,7 +3,7 @@
 grep: a semi-functional workalike of the grep function in Linux for finding regex and
 	other strings in files.
 '''
-import re, os, time, random,string
+import re, os, string
 
 def is_iterable(x):
 	'''returns False for strings, True for all other iterables'''
