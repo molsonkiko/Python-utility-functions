@@ -13,6 +13,7 @@ This is a grab-bag of stuff I created "just because".
     <b>-</b> search for filenames (which can include non-text files) and directory names matching regexes<br>
     <b>-</b> use pipes to successively refine file searches<br>
     <b>-</b> Write results to JSON files<br>
+    <b>-</b> Order results by (and view) last modification time or file size<br>
     <b>-</b> Automatically open all files found by the search (Windows only)
   </ul>
  </li>
