@@ -8,7 +8,7 @@ This is a grab-bag of stuff I created "just because".
     <b>-</b> use pipes to successively refine file searches<br>
     <b>-</b> Write results to JSON files<br>
     <b>-</b> Order results by (and view) last modification time or file size<br>
-    <b>-</b> Limit number of files returned (useful when ordering by mod time or size)
+    <b>-</b> Limit number of files returned (useful when ordering by mod time or size)<br>
     <b>-</b> Automatically open all files found by the search (Windows only)
   </ul>
   <b>2.</b> json_funcs: Two functions that do depth-first search in JSON.<ul>
