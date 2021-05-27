@@ -9,7 +9,7 @@ from commanum import format_bytes
 def fname_checker(fname,ext):
 	ext_begin = -len(fname)
 	for ind in range(1,len(fname)+1):
-			ext_begin = ind
+		ext_begin = ind
 		if fname[-ind]=='.':
 			break
 	return fname[:-ext_begin] + '.' + ext
