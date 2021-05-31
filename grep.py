@@ -4,7 +4,7 @@ import time
 import os
 import sys
 from dateutil import parser
-from commanum import format_bytes
+from commanum import format_bytes, byteform_to_num
 
 def fname_checker(fname,ext):
 	ext_begin = -len(fname)
@@ -94,44 +94,59 @@ def process_grep_query(query, mode = 'print', has_warned_fname = False):
 	except (IndexError,re.error):
 		print("Malformed query. Try again.")
 		return
-	m_option = any(('m' in x) for x in options)
+	
+	num_results = len(resultset)
+	for optset in options:
+		num = re.findall('\d+', optset)
+		if len(num) > 0:
+			num_results = int(num[0]) # find numeric arg
+	 
+	m_option = any(('m' in x) for x in options) # get modification times for files
+	s_option = any(('s' in x) for x in options) # find file sizes
+	t_option = any(('t' in x) for x in options) # used -t option, get count of files and sum of sizes
+	
+	if (num_results < len(resultset)) and (not (s_option or m_option)):
+		if isinstance(resultset, dict):
+			short_results = {}
+			for ii, elt in enumerate(resultset):
+				if ii == num_results:
+					break
+				short_results[elt] = resultset[elt]
+			resultset = short_results
+		else:
+			resultset = resultset[:num_results] # truncate resultset to n responses, where n is numeric arg
+	
 	if m_option:
 		modtime_d = [(f,last_mod_time(f,True)) for f in resultset]
 		modtime_d.sort(key=lambda x: x[1],reverse=True)
 		modtime_d = [(x,str(y)) for x,y in modtime_d]
-		resultset = modtime_d
+		resultset = modtime_d[:num_results]
 		del modtime_d
 	
-	t_option = any(('t' in x) for x in options) # used -t option, get count of files and sum of sizes
-	if any(('s' in x) for x in options): # find file sizes
+	if s_option: 
 		if not m_option:
 			sizes = [(f, filesize(f)) for f in resultset]
-			if t_option:
-				sizes = [len(resultset), format_bytes(sum(x[1] for x in sizes))]
-			else:
-				sizes.sort(key = lambda x: x[1], reverse = True)				
-				sizes = [(x, format_bytes(y)) for x,y in sizes]
+			sizes.sort(key = lambda x: x[1], reverse = True)
+			sizes = sizes[:num_results]
+			summary = [len(sizes), format_bytes(sum(x[-1] for x in sizes))]
+			sizes = [(x, format_bytes(y)) for x,y in sizes]
 		else:
 			sizes = [f + (filesize(f[0]),) for f in resultset]
-			if t_option: 
-				sizes = [len(resultset), format_bytes(sum(x[2] for x in sizes))]
-			else:
-				sizes.sort(key = lambda x: x[2], reverse = True)
-				sizes = [(x, y, format_bytes(z)) for x,y,z in sizes]
+			sizes.sort(key = lambda x: x[2], reverse = True)
+			sizes = sizes[:num_results]
+			summary = [len(sizes), format_bytes(sum(x[-1] for x in sizes))]
+			sizes = [(x, y, format_bytes(z)) for x,y,z in sizes]
 		resultset = sizes
 		del sizes
-	elif t_option:
-		resultset = len(resultset)
-		
-	for optset in options:
-		num = re.findall('\d+', optset)
-		if len(num) > 0:
-			resultset = resultset[:int(num[0])] 
-			# truncate resultset to n responses, where n is numeric arg
+	else:
+		summary = len(resultset)
 	
+	if mode == 'print':
+		print(summary)
+		
 	if any(('p' in x) for x in options): #used -p option, open files
 		p_option = True
-		if mode == 'print':
+		if mode == 'print' and not t_option:
 			print(resultset)
 		opening_decision = 'y'
 		if len(resultset) > 5:
@@ -154,9 +169,11 @@ def process_grep_query(query, mode = 'print', has_warned_fname = False):
 		del write_to_name
 	
 	if mode == 'print':
-		if not (p_option | w_option): # just print results
+		if not (p_option | w_option) and not t_option: # just print results
 			print(resultset)
 		return has_warned_fname
+	if t_option:
+		return summary
 	return resultset
 
 
