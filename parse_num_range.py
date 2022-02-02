@@ -54,7 +54,7 @@ def fix_bin_dict(ranges, default_min = -INF):
     '''Given a dict mapping anything to strings, return a new dict where
     fix_bins was applied to the values.
     '''
-    return dict(zip(ranges.keys(), fix_bins(ranges.values(), default_min)))
+    return dict(zip(ranges.keys(), fix_bins(ranges.values(), default_min).values()))
     
 def rangestring_col(df, low_colname, high_colname, zfill = True):
     if zfill:
