@@ -16,10 +16,16 @@ int, float, bool, str, and None.
 Note that this works on JSON as well as YAML even though it uses the YAML 
 parser because JSON is a subset of YAML.
 
-Performance-wise, convert_multi_keys seems to have about the same runtime as
+Performance-wise, convert_multi_keys seems to be slightly slower than
 yaml.safe_load, but it is MUCH slower than json.loads.
+
+Unlike yaml.safe_load, which will crash on any file that has lines with
+leading tabs, this replaces all leading tabs with leading spaces (default 4),
+because some JSON files have leading tabs.
+See convert_leading_tabs for this convenience function.
 '''
 import yaml
+from ast import literal_eval
 from collections import Counter
 import re
 
@@ -68,7 +74,7 @@ def convert_multi_keys(yamtxt):
         
         return out
     
-    yamc = yaml.compose(yamtxt)
+    yamc = yaml.compose(convert_leading_tabs(yamtxt))
     if isinstance(yamc, yaml.MappingNode):
         out = {}
     else:
@@ -76,25 +82,18 @@ def convert_multi_keys(yamtxt):
     
     return search(yamc, out)
 
-yamtxt = '''fuqj:
-    blu: [1., 1.5]
-    blu: True
-    foo: [3, 4]
-    1: 5.
-    1: null
-me: zu'''
 
-def test():
-    yamtxt_normal_out = {'fuqj': {'blu': True, 'foo': [3, 4], 1: None}, 'me': 'zu'}
-    # note that yamtxt_normal_out only includes the last instance of each
-    # key-value pair whenever there were duplicate keys, because hashmaps
-    # can only have one pair for each unique key.
-    yamtxt_multikey_out = {'fuqj': {'blu': [[1., 1.5], True], 
-                                    'foo': [3, 4], 
-                                    1: [5., None]},
-                           'me': 'zu'}
-    if yamtxt_multikey_out != convert_multi_keys(yamtxt):
-        print(f'THIS MODULE DOES NOT WORK!\n{yamtxt}\nshould have been parsed as {yamtxt_multikey_out} but was instead parsed as {convert_multi_keys(yamtxt)}')
+def _convert_re_match(m, tabs_per_space):
+    return tabs_per_space * ' ' * len(m.group())
+
+
+def convert_leading_tabs(string, spaces_per_tab = 4):
+    '''takes all '\t' at the start of any lines in string and replaces them with spaces_per_tab ' ' characters per '\t' excised.
+    Does not touch any '\t' characters not at the start of a line.'''
+    converter = lambda x: _convert_re_match(x, spaces_per_tab)
+    
+    return '\n'.join(re.sub('^\t+', converter, line) 
+                    for line in string.split('\n')) 
 
 
 def CLI(yaml_fname):
@@ -106,12 +105,42 @@ def CLI(yaml_fname):
     return yaml.safe_dump(convert_multi_keys(txt))
 
 
+def test():
+    yamtxt = '''fuqj:
+    blu: [1., 1.5]
+    blu: True
+    foo: [3, 4]
+    1: 5.
+    1: null
+me: zu'''
+    yamtxt_normal_out = {'fuqj': {'blu': True, 'foo': [3, 4], 1: None}, 'me': 'zu'}
+    # note that yamtxt_normal_out only includes the last instance of each
+    # key-value pair whenever there were duplicate keys, because hashmaps
+    # can only have one pair for each unique key.
+    yamtxt_multikey_out = {'fuqj': {'blu': [[1., 1.5], True], 
+                                    'foo': [3, 4], 
+                                    1: [5., None]},
+                           'me': 'zu'}
+    if yamtxt_multikey_out != convert_multi_keys(yamtxt):
+        print(f'THIS MODULE DOES NOT WORK!\n{yamtxt}\nshould have been parsed as {yamtxt_multikey_out} but was instead parsed as {convert_multi_keys(yamtxt)}')
+    # now test on some JSON documents that have no duplicate keys    
+    for yamtxt in ['{}', '[]', "['a', 'b', {'a': 1, 'b': 2}]", '[1,2]']:
+        true_out, my_out = literal_eval(yamtxt), convert_multi_keys(yamtxt)
+        assert true_out == my_out, \
+            f'{yamtxt} should have been parsed by convert_multi_keys as {true_out}, got {my_out}'
+    
+    convtabs_in = '\ta\tb\n\tb'
+    convtabs = convert_leading_tabs(convtabs_in, 2)
+    convtabs_true = '  a\tb\n  b'
+    assert convtabs == convtabs_true, \
+       f'convert_leading_tabs({convtabs_in:r}) should have given {convtabs_true:r}, gave {convtabs:r}'
+
+
 if __name__ == '__main__':
     import sys
     try:
         fname = ' '.join(sys.argv[1:])
-        print(CLI(fname))
-    except IndexError:
-        pass
+        if fname != '':
+            print(CLI(fname))
     except FileNotFoundError as ex:
         print(ex)
